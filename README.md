@@ -29,3 +29,5 @@ kubectl get svc -n newelasticstackdeployment
 kubectl port-forward service/kibana 5601:5601 -n newelasticstackdeployment
 ```
 
+Access Kibana Dashboard
+Once port forwarding is set up, you can access the Kibana dashboard by navigating to <http://localhost:5601> in your web browser.
