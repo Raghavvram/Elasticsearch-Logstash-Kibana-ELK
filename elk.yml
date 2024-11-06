@@ -1,0 +1,174 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: newelasticstackdeployment
+
+---
+# RBAC for Elasticsearch
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: elasticsearch-logging
+  namespace: newelasticstackdeployment
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: elasticsearch-logging
+rules:
+  - apiGroups: [""]
+    resources: ["services", "namespaces", "endpoints"]
+    verbs: ["get"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: elasticsearch-logging
+  namespace: newelasticstackdeployment
+subjects:
+  - kind: ServiceAccount
+    name: elasticsearch-logging
+    namespace: newelasticstackdeployment
+roleRef:
+  kind: ClusterRole
+  name: elasticsearch-logging
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Deployment for Elasticsearch
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch
+  namespace: newelasticstackdeployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      serviceAccountName: elasticsearch-logging
+      containers:
+        - name: elasticsearch
+          image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
+          ports:
+            - containerPort: 9200
+            - containerPort: 9300
+          env:
+            - name: discovery.type
+              value: single-node
+
+---
+# Deployment for Logstash
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logstash
+  namespace: newelasticstackdeployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: logstash
+  template:
+    metadata:
+      labels:
+        app: logstash
+    spec:
+      containers:
+        - name: logstash
+          image: docker.elastic.co/logstash/logstash:7.17.10
+          ports:
+            - containerPort: 5000
+            - containerPort: 9600
+          env:
+            - name: LOGSTASH_HOSTS
+              value: elasticsearch.newelasticstackdeployment:9200
+
+---
+# Deployment for Kibana
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: newelasticstackdeployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+        - name: kibana
+          image: docker.elastic.co/kibana/kibana:7.17.10
+          env:
+            - name: ELASTICSEARCH_HOSTS
+              value: http://elasticsearch.newelasticstackdeployment:9200
+          ports:
+            - containerPort: 5601
+
+---
+# Service for Elasticsearch
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: newelasticstackdeployment
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+    - protocol: TCP
+      port: 9200
+      targetPort: 9200
+      name: http
+    - protocol: TCP
+      port: 9300
+      targetPort: 9300
+      name: transport
+
+---
+# Service for Logstash
+apiVersion: v1
+kind: Service
+metadata:
+  name: logstash
+  namespace: newelasticstackdeployment
+spec:
+  selector:
+    app: logstash
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+      name: beats
+    - protocol: TCP
+      port: 9600
+      targetPort: 9600
+      name: monitoring
+
+---
+# Service for Kibana
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+  namespace: newelasticstackdeployment
+spec:
+  selector:
+    app: kibana
+  ports:
+    - protocol: TCP
+      port: 5601
+      targetPort: 5601
+      name: ui
