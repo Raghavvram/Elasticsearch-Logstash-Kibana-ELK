@@ -23,3 +23,9 @@ kubectl get pods -n newelasticstackdeployment
 kubectl get svc -n newelasticstackdeployment
 ```
 
+4. Port Forward Kibana to Localhost:
+
+```
+kubectl port-forward service/kibana 5601:5601 -n newelasticstackdeployment
+```
+
