@@ -10,3 +10,8 @@ Commands to Apply Configuration and Port Forward
 kubectl create namespace newelasticstackdeployment
 ```
 
+2. Apply the Combined YAML File:
+
+```
+kubectl apply -f elk.yml
+```
