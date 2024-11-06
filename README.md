@@ -15,3 +15,11 @@ kubectl create namespace newelasticstackdeployment
 ```
 kubectl apply -f elk.yml
 ```
+
+3. Verify Pod and Service Status:
+
+```
+kubectl get pods -n newelasticstackdeployment
+kubectl get svc -n newelasticstackdeployment
+```
+
